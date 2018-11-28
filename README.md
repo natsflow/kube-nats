@@ -15,9 +15,11 @@ skaffold dev
 ```
 
 Interact with kube using nats. 
-Here we log all kubernetes events from all namespaces in all clusters to the console:
+Here we use [node-nats](https://github.com/nats-io/node-nats) to log all kubernetes events from all namespaces in all clusters to the console:
 
-```javascript
+```js
+let NATS = require('nats')
+let nats = NATS.connect({ 'json': true });
 nats.subscribe('kube.event.watch', resp => console.log(resp))
 ```
 
