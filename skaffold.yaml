@@ -1,0 +1,11 @@
+apiVersion: skaffold/v1alpha5
+kind: Config
+build:
+  artifacts:
+  - image: kube-nats
+deploy:
+  kubectl:
+    manifests:
+    # service account 'kube-nats' gives this pod access to all resources in the cluster (see deployment.yaml)
+    - deployments/kube-nats-rbac.yaml
+    - deployments/deployment.yaml

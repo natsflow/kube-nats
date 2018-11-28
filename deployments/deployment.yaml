@@ -1,0 +1,28 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-nats
+  labels:
+    app: kube-nats
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kube-nats
+  template:
+    metadata:
+      labels:
+        app: kube-nats
+        version: v1
+    spec:
+      serviceAccountName: kube-nats
+      containers:
+      - name: kube-nats
+        image: kube-nats
+        env:
+        - name: "NATS_URL"
+          value: "nats://example-nats-cluster:4222"
+        - name: "CLUSTER"
+          value: "minikube"
