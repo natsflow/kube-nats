@@ -23,6 +23,6 @@ spec:
         image: kube-nats
         env:
         - name: "NATS_URL"
-          value: "nats://example-nats-cluster:4222"
+          value: "nats://nats-cluster:4222"
         - name: "CLUSTER"
           value: "minikube"

@@ -6,7 +6,7 @@ Interact with kubernetes using NATS
 ## Quick start
 
 Run NATS using e.g. [NATS Operator](https://github.com/nats-io/nats-operator) 
-(this example assumes a NATS cluster running behind a service `example-nats-cluster`)
+(this example assumes a NATS cluster running behind a service `nats-cluster`)
 
 Run kube-nats:
 
@@ -81,10 +81,10 @@ output:
           "creationTimestamp": "2018-11-26T09:54:38Z",
           "labels": {
             "app": "nats",
-            "nats_cluster": "example-nats-cluster",
+            "nats_cluster": "nats-cluster",
             "nats_version": "1.3.0"
           },
-          "name": "example-nats-cluster-1",
+          "name": "nats-cluster-1",
           "namespace": "default",
          ...etc
 ```
@@ -106,7 +106,7 @@ let req = {
   cluster: 'minikube',
   groupVersionResource: { Group: '', Version: 'v1', Resource: 'pods' },
   namespace: 'default',
-  name: 'example-nats-cluster-1'
+  name: 'nats-cluster-1'
 }
 nats.requestOne('kube.get', req, {}, 3000, resp => {
   console.log(JSON.stringify(resp, null, 2))
@@ -127,10 +127,10 @@ output:
       "creationTimestamp": "2018-11-26T09:54:38Z",
       "labels": {
         "app": "nats",
-        "nats_cluster": "example-nats-cluster",
+        "nats_cluster": "nats-cluster",
         "nats_version": "1.3.0"
       },
-      "name": "example-nats-cluster-1",
+      "name": "nats-cluster-1",
       "namespace": "default",
          ...etc
 ```
@@ -273,7 +273,7 @@ output:
       { apiVersion: 'v1',
         fieldPath: 'spec.containers{nats}',
         kind: 'Pod',
-        name: 'example-nats-cluster-2',
+        name: 'nats-cluster-2',
         namespace: 'default',
         resourceVersion: '840',
         uid: 'b1e99aa5-f305-11e8-b09e-827816e0a801' },
