@@ -34,13 +34,22 @@ kube-nats to know which requests it should handle. The local skaffold profile wi
 ## Nats Subjects
 
 kube-nats effectively proxies the [dynamic kubernetes api](https://github.com/kubernetes/client-go/blob/master/dynamic/interface.go)
-The message bodies for requests & responses follow the corresponding kube api message bodies as closely as possible 
+The message bodies for requests & responses follow the corresponding kube api message bodies as closely as possible.
+Note that the `groupVersionResource` object requires the *plural* version of a resource (e.g. 'pods', 'deployments' etc) - it will not
+work with the singular versions.
 
 The following nats subjects are currently supported.
 
 ### Request-Reply
 
-All message responses are json and will include a non-empty `err` string field in the case of an error.
+All message responses are json.
+If an error occurs, and object with a single string field "error" will be returned. e.g.
+
+```
+{
+  "error": "deployments.apps \"nginx\" not found"
+}
+```
 
 #### kube.list
 
@@ -68,24 +77,21 @@ output:
 
 ```
 {
-  "resources": {
-    "apiVersion": "v1",
-    "items": [
-      {
-        "apiVersion": "v1",
-        "kind": "Pod",
-        "metadata": {
-          "annotations": {
-            "nats.version": "1.3.0"
-          },
-          "creationTimestamp": "2018-11-26T09:54:38Z",
-          "labels": {
-            "app": "nats",
-            "nats_cluster": "nats-cluster",
-            "nats_version": "1.3.0"
-          },
-          "name": "nats-cluster-1",
-          "namespace": "default",
+  "apiVersion": "v1",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "kind": "Pod",
+      "metadata": {
+        "creationTimestamp": "2019-01-08T16:51:20Z",
+        "generateName": "kube-nats-7c8599f6d5-",
+        "labels": {
+          "app": "kube-nats",
+          "pod-template-hash": "7c8599f6d5"
+        },
+        "name": "kube-nats-7c8599f6d5-xf9cf",
+        "namespace": "default",
+
          ...etc
 ```
 
@@ -117,21 +123,21 @@ output:
 
 ```
 {
-  "resource": {
-    "apiVersion": "v1",
-    "kind": "Pod",
-    "metadata": {
-      "annotations": {
-        "nats.version": "1.3.0"
-      },
-      "creationTimestamp": "2018-11-26T09:54:38Z",
-      "labels": {
-        "app": "nats",
-        "nats_cluster": "nats-cluster",
-        "nats_version": "1.3.0"
-      },
-      "name": "nats-cluster-1",
-      "namespace": "default",
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {
+    "annotations": {
+      "nats.version": "1.3.0"
+    },
+    "creationTimestamp": "2019-01-08T16:49:40Z",
+    "labels": {
+      "app": "nats",
+      "nats_cluster": "nats-cluster",
+      "nats_version": "1.3.0"
+    },
+    "name": "nats-cluster-1",
+    "namespace": "default",
+
          ...etc
 ```
 
@@ -191,18 +197,17 @@ output:
 
 ```
 {
-  "resource": {
-    "apiVersion": "apps/v1",
-    "kind": "Deployment",
-    "metadata": {
-      "creationTimestamp": "2018-11-27T00:21:29Z",
-      "generation": 1,
-      "labels": {
-        "app": "nginx"
-      },
-      "name": "nginx",
-      "namespace": "default",
-      "resourceVersion": "109926",
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "creationTimestamp": "2019-01-08T17:12:22Z",
+    "generation": 1,
+    "labels": {
+      "app": "nginx"
+    },
+    "name": "nginx",
+    "namespace": "default",
+    "resourceVersion": "3691",
          ...etc
 ```
 
@@ -234,10 +239,7 @@ nats.requestOne('kube.delete', req, {}, 3000, resp => {
 output:
 
 ```
-{
-  "err": ""
-}
-
+{}
 ```
 
 </details> 
