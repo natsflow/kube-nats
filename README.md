@@ -35,7 +35,7 @@ kube-nats to know which requests it should handle. The local skaffold profile wi
 
 kube-nats effectively proxies the [dynamic kubernetes api](https://github.com/kubernetes/client-go/blob/master/dynamic/interface.go)
 The message bodies for requests & responses follow the corresponding kube api message bodies as closely as possible.
-Note that the `groupVersionResource` object requires the *plural* version of a resource (e.g. 'pods', 'deployments' etc) - it will not
+Note that the `groupVersionResource` object requires the *plural* name of a resource (e.g. 'pods', 'deployments' etc) - it will not
 work with the singular versions.
 
 The following nats subjects are currently supported.

@@ -2,15 +2,8 @@ package handler
 
 import (
 	"github.com/nats-io/go-nats"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog/log"
 )
-
-var logger *zap.SugaredLogger
-
-func init() {
-	l, _ := zap.NewProduction()
-	logger = l.Sugar()
-}
 
 type NatsPublisher interface {
 	Publish(subject string, v interface{}) error
@@ -28,19 +21,33 @@ type NatsPubSuber interface {
 // common pub/sub & log patterns
 func subscribe(n NatsSubscriber, subject string, handler nats.Handler) {
 	if _, err := n.Subscribe(subject, handler); err != nil {
-		logger.Fatalf("failed to subscribe to subject=%s: %v", subject, err)
+		log.Fatal().Err(err).Str("subject", subject).Msg("could not subscribe to NATS subject")
 	}
-	logger.Infof("Subscribed to subject=%s", subject)
+	log.Info().Str("subject", subject).Msg("subscribed to NATS subject")
 }
 
-func publishReply(n NatsPublisher, subject, reply string, resp interface{}) {
-	if err := n.Publish(reply, resp); err != nil {
-		logger.Errorf("could not publish reply to nats subject=%s reply=%s: %v", subject, reply, err)
+func publishReply(n NatsPublisher, subject, reply string, resp interface{}, respErr error) {
+	if respErr != nil {
+		resp = ErrorResp{respErr.Error()}
 	}
+	if err := n.Publish(reply, resp); err != nil {
+		log.Error().
+			Err(err).
+			Str("subject", subject).
+			Str("reply", reply).
+			Msg("could not publish to NATS")
+	}
+}
+
+type ErrorResp struct {
+	Error string `json:"error"`
 }
 
 func publish(n NatsPublisher, subject string, event interface{}) {
 	if err := n.Publish(subject, event); err != nil {
-		logger.Errorf("could not publish to nats subject=%s: %v", subject, err)
+		log.Error().
+			Err(err).
+			Str("subject", subject).
+			Msg("could not publish to NATS")
 	}
 }
