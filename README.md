@@ -36,16 +36,17 @@ kube-nats to know which requests it should handle. The local skaffold profile wi
 kube-nats uses the Kubernetes Go client's [dynamic kubernetes api](https://github.com/kubernetes/client-go/blob/master/dynamic/interface.go).
 The types returned from kube-nats are the exact types that the library returns, serialised to json i.e. `*unstructured.Unstructured` or `*unstructured.UnstructuredList` 
 These are the same as the responses you would receive if using the rest api directly or kubectl.
-   
-Note that the `groupVersionResource` object requires the *plural* name of a resource (e.g. 'pods', 'deployments' etc) - it will not
-work with the singular versions.
 
 The following nats subjects are currently supported.
 
 ### Request-Reply
 
 All message responses are json.
-If an error occurs, and object with a single string field "error" will be returned. e.g.
+
+Note that the `groupVersionResource` object requires the *plural* name of a resource (e.g. 'pods', 'deployments' etc) - it will not
+work with the singular versions.
+
+For all subject requests, if an error occurs an object with a single string field "error" will be returned. e.g.
 
 ```
 {
