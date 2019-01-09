@@ -33,8 +33,10 @@ kube-nats to know which requests it should handle. The local skaffold profile wi
 
 ## Nats Subjects
 
-kube-nats effectively proxies the [dynamic kubernetes api](https://github.com/kubernetes/client-go/blob/master/dynamic/interface.go)
-The message bodies for requests & responses follow the corresponding kube api message bodies as closely as possible.
+kube-nats uses the Kubernetes Go client's [dynamic kubernetes api](https://github.com/kubernetes/client-go/blob/master/dynamic/interface.go).
+The types returned from kube-nats are the exact types that the library returns, serialised to json i.e. `*unstructured.Unstructured` or `*unstructured.UnstructuredList` 
+These are the same as the responses you would receive if using the rest api directly or kubectl.
+   
 Note that the `groupVersionResource` object requires the *plural* name of a resource (e.g. 'pods', 'deployments' etc) - it will not
 work with the singular versions.
 
@@ -56,7 +58,7 @@ If an error occurs, and object with a single string field "error" will be return
 List all kube resources matching the request. If you do not provide a namespace, then all namespaces will be searched. 
 `groupVersionResource` is mandatory.
 Response is essentially equivalent to e.g. `kubectl get pods -n default -o json`
-For the exact requests & responses supported see [ListReq & ListResp](pkg/handler/handler.go).
+For the exact request supported see [ListReq](pkg/handler/handler.go).
  
 <details>
  <summary>e.g. (node)</summary>
@@ -102,7 +104,7 @@ output:
 Get the kube resource matching the request. If you do not provide a namespace, then all namespaces will be searched. 
 `groupVersionResource` is mandatory.
 Response is essentially equivalent to e.g. `kubectl get pod my-amazing-app-74c459d9d6-m828p -n foo -o json`
-For the exact requests & responses supported see [GetReq & GetResp](pkg/handler/handler.go).
+For the exact request supported see [GetReq](pkg/handler/handler.go).
 
 <details>
  <summary>e.g. (node)</summary>
@@ -148,7 +150,7 @@ output:
 Create the provided kube resource. 
 `groupVersionResource` is mandatory.
 Is essentially equivalent to e.g. `kubectl create deployment -f deploy.json`
-For the exact requests & responses supported see [CreateReq & CreateResp](pkg/handler/handler.go).
+For the exact request supported see [CreateReq](pkg/handler/handler.go).
 
 <details>
  <summary>e.g. (node)</summary>
@@ -218,7 +220,7 @@ output:
 Delete the specified kube resource. 
 `groupVersionResource` is mandatory.
 Is essentially equivalent to e.g. `kubectl delete deploy my-amazing-app -n foo`
-For the exact requests & responses supported see [DeleteReq & DeleteResp](pkg/handler/handler.go).
+For the exact request supported see [DeleteReq](pkg/handler/handler.go).
 
 <details>
  <summary>e.g. (node)</summary>
@@ -250,7 +252,7 @@ output:
 
 Watches all kubernetes events in all namespaces and all clusters (clusters must be running an instance of kube-nats).  
 Response is essentially equivalent to `kubectl get events --all-namespaces -w -o json` (assuming that kubectl connected to all clusters!)
-For the exact response see [WatchEventResp](pkg/handler/handler.go).
+For the exact event published see [WatchEvent](pkg/handler/handler.go).
 
 <details>
  <summary>e.g. (node)</summary>
