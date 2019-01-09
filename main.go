@@ -1,11 +1,11 @@
 package main
 
 import (
-	nt "github.com/nats-io/go-nats"
+	"github.com/nats-io/go-nats"
 	"github.com/natsflow/kube-nats/pkg/handler"
-	"github.com/natsflow/kube-nats/pkg/k8s"
-	"github.com/natsflow/kube-nats/pkg/nats"
 	"go.uber.org/zap"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
 	"os"
 )
 
@@ -19,9 +19,9 @@ func init() {
 func main() {
 	natsURL, ok := os.LookupEnv("NATS_URL")
 	if !ok {
-		natsURL = nt.DefaultURL
+		natsURL = nats.DefaultURL
 	}
-	n := nats.NewConnection(natsURL)
+	n := newNatsConn(natsURL)
 	defer n.Close()
 
 	cluster, ok := os.LookupEnv("CLUSTER")
@@ -29,7 +29,7 @@ func main() {
 		logger.Fatal("You must specify what cluster this is running by setting $CLUSTER")
 	}
 
-	k, err := k8s.NewDynamicClient()
+	k, err := newK8sCli()
 	if err != nil {
 		logger.Fatalf("Could not create kubernetes client: %s", err)
 	}
@@ -41,4 +41,27 @@ func main() {
 	go handler.WatchEvents(n, cluster, k)
 
 	select {}
+}
+
+func newNatsConn(url string) *nats.EncodedConn {
+	nc, err := nats.Connect(url)
+	if err != nil {
+		logger.Fatalf("Failed to connect to nats on %q: %v", url, err)
+	}
+	logger.Infof("Connected to nats %s", url)
+
+	ec, err := nats.NewEncodedConn(nc, nats.JSON_ENCODER)
+	if err != nil {
+		logger.Fatalf("Failed to get json encoder: %v", err)
+	}
+	return ec
+}
+
+func newK8sCli() (dynamic.Interface, error) {
+	// TODO: allow running outside of cluster?
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+	return dynamic.NewForConfig(cfg)
 }
