@@ -10,7 +10,7 @@ type NatsPublisher interface {
 }
 
 type NatsSubscriber interface {
-	Subscribe(subject string, cb nats.Handler) (*nats.Subscription, error)
+	QueueSubscribe(subject, queue string, cb nats.Handler) (*nats.Subscription, error)
 }
 
 type NatsPubSuber interface {
@@ -20,7 +20,7 @@ type NatsPubSuber interface {
 
 // common pub/sub & log patterns
 func subscribe(n NatsSubscriber, subject string, handler nats.Handler) {
-	if _, err := n.Subscribe(subject, handler); err != nil {
+	if _, err := n.QueueSubscribe(subject, "kube-nats", handler); err != nil {
 		log.Fatal().Err(err).Str("subject", subject).Msg("could not subscribe to NATS subject")
 	}
 	log.Info().Str("subject", subject).Msg("subscribed to NATS subject")
