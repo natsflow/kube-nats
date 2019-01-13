@@ -2,7 +2,7 @@ apiVersion: skaffold/v1beta2
 kind: Config
 build:
   artifacts:
-  - image: kube-nats
+  - image: natsflow/kube-nats
 deploy:
   kubectl:
     manifests:

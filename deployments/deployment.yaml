@@ -17,7 +17,7 @@ spec:
       serviceAccountName: kube-nats
       containers:
       - name: kube-nats
-        image: kube-nats
+        image: natsflow/kube-nats
         env:
         - name: "NATS_URL"
           value: "nats://nats-cluster:4222"
