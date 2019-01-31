@@ -103,6 +103,39 @@ func TestShouldPublishKubeErrorsToNats(t *testing.T) {
 	nts.AssertExpectations(t)
 }
 
+func TestGetHandler(t *testing.T) {
+	// given
+	r := new(ResourceInterfaceMock)
+	kubeResp := &unstructured.Unstructured{}
+	r.On("Get", "nats-cluster-1", metav1.GetOptions{}, *new([]string)).Return(kubeResp, nil)
+	n := new(NamespaceableResourceInterfaceMock)
+	n.On("Namespace", "foo").Return(r)
+	i := new(DynamicInterfaceMock)
+	gvr := schema.GroupVersionResource{
+		Group:    "",
+		Version:  "v1",
+		Resource: "pods",
+	}
+	i.On("Resource", gvr).Return(n)
+	nts := new(NatsMock)
+	nts.On("Publish", "_INBOX.aPXtkzW5ztAmDooWta7P1B.hXe5Q0m7", kubeResp).Return(nil)
+
+	// when
+	req := GetReq{
+		Cluster:              "kube-cluster-1",
+		Namespace:            "foo",
+		GroupVersionResource: gvr,
+		Name: "nats-cluster-1",
+	}
+	getHandler(nts, "kube-cluster-1", i)("kube.get", "_INBOX.aPXtkzW5ztAmDooWta7P1B.hXe5Q0m7", req)
+
+	// then
+	i.AssertExpectations(t)
+	n.AssertExpectations(t)
+	r.AssertExpectations(t)
+	nts.AssertExpectations(t)
+}
+
 type NatsMock struct {
 	mock.Mock
 }

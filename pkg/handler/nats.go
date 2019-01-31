@@ -5,28 +5,28 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type NatsPublisher interface {
+type natsPublisher interface {
 	Publish(subject string, v interface{}) error
 }
 
-type NatsSubscriber interface {
+type natsSubscriber interface {
 	QueueSubscribe(subject, queue string, cb nats.Handler) (*nats.Subscription, error)
 }
 
-type NatsPubSuber interface {
-	NatsPublisher
-	NatsSubscriber
+type natsPubSuber interface {
+	natsPublisher
+	natsSubscriber
 }
 
 // common pub/sub & log patterns
-func queueSubscribe(n NatsSubscriber, subject string, handler nats.Handler) {
+func queueSubscribe(n natsSubscriber, subject string, handler nats.Handler) {
 	if _, err := n.QueueSubscribe(subject, "kube-nats", handler); err != nil {
 		log.Fatal().Err(err).Str("subject", subject).Msg("could not subscribe to NATS subject")
 	}
 	log.Info().Str("subject", subject).Msg("subscribed to NATS subject")
 }
 
-func publishReply(n NatsPublisher, subject, reply string, resp interface{}, respErr error) {
+func publishReply(n natsPublisher, subject, reply string, resp interface{}, respErr error) {
 	if respErr != nil {
 		resp = ErrorResp{respErr.Error()}
 	}
@@ -43,7 +43,7 @@ type ErrorResp struct {
 	Error string `json:"error"`
 }
 
-func publish(n NatsPublisher, subject string, event interface{}) {
+func publish(n natsPublisher, subject string, event interface{}) {
 	if err := n.Publish(subject, event); err != nil {
 		log.Error().
 			Err(err).
