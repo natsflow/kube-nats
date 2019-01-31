@@ -9,13 +9,17 @@ import (
 )
 
 func List(n NatsPubSuber, cluster string, k dynamic.Interface) {
-	subscribe(n, "kube.list", func(subject, reply string, req ListReq) {
+	queueSubscribe(n, "kube.list", listHandler(n, cluster, k))
+}
+
+func listHandler(n NatsPubSuber, cluster string, k dynamic.Interface) func(subject, reply string, req ListReq) {
+	return func(subject, reply string, req ListReq) {
 		if req.Cluster != cluster {
 			return
 		}
 		ul, err := k.Resource(req.GroupVersionResource).Namespace(req.Namespace).List(req.ListOptions)
 		publishReply(n, subject, reply, ul, err)
-	})
+	}
 }
 
 type ListReq struct {
@@ -26,7 +30,7 @@ type ListReq struct {
 }
 
 func Get(n NatsPubSuber, cluster string, k dynamic.Interface) {
-	subscribe(n, "kube.get", func(subject, reply string, req GetReq) {
+	queueSubscribe(n, "kube.get", func(subject, reply string, req GetReq) {
 		if req.Cluster != cluster {
 			return
 		}
@@ -45,7 +49,7 @@ type GetReq struct {
 }
 
 func Create(n NatsPubSuber, cluster string, k dynamic.Interface) {
-	subscribe(n, "kube.create", func(subject, reply string, req CreateReq) {
+	queueSubscribe(n, "kube.create", func(subject, reply string, req CreateReq) {
 		if req.Cluster != cluster {
 			return
 		}
@@ -64,7 +68,7 @@ type CreateReq struct {
 }
 
 func Delete(n NatsPubSuber, cluster string, k dynamic.Interface) {
-	subscribe(n, "kube.delete", func(subject, reply string, req DeleteReq) {
+	queueSubscribe(n, "kube.delete", func(subject, reply string, req DeleteReq) {
 		if req.Cluster != cluster {
 			return
 		}

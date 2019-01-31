@@ -19,7 +19,7 @@ type NatsPubSuber interface {
 }
 
 // common pub/sub & log patterns
-func subscribe(n NatsSubscriber, subject string, handler nats.Handler) {
+func queueSubscribe(n NatsSubscriber, subject string, handler nats.Handler) {
 	if _, err := n.QueueSubscribe(subject, "kube-nats", handler); err != nil {
 		log.Fatal().Err(err).Str("subject", subject).Msg("could not subscribe to NATS subject")
 	}
