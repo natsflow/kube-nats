@@ -125,9 +125,78 @@ func TestGetHandler(t *testing.T) {
 		Cluster:              "kube-cluster-1",
 		Namespace:            "foo",
 		GroupVersionResource: gvr,
-		Name: "nats-cluster-1",
+		Name:                 "nats-cluster-1",
 	}
 	getHandler(nts, "kube-cluster-1", i)("kube.get", "_INBOX.aPXtkzW5ztAmDooWta7P1B.hXe5Q0m7", req)
+
+	// then
+	i.AssertExpectations(t)
+	n.AssertExpectations(t)
+	r.AssertExpectations(t)
+	nts.AssertExpectations(t)
+}
+
+func TestCreateHandler(t *testing.T) {
+	// given
+	r := new(ResourceInterfaceMock)
+	resourceToCreate := &unstructured.Unstructured{}
+	kubeResp := &unstructured.Unstructured{}
+	r.On("Create", resourceToCreate, metav1.CreateOptions{}, *new([]string)).Return(kubeResp, nil)
+
+	n := new(NamespaceableResourceInterfaceMock)
+	n.On("Namespace", "foo").Return(r)
+	i := new(DynamicInterfaceMock)
+	gvr := schema.GroupVersionResource{
+		Group:    "",
+		Version:  "v1",
+		Resource: "pods",
+	}
+	i.On("Resource", gvr).Return(n)
+	nts := new(NatsMock)
+	nts.On("Publish", "_INBOX.aPXtkzW5ztAmDooWta7P1B.hXe5Q0m7", kubeResp).Return(nil)
+
+	// when
+	req := CreateReq{
+		Cluster:              "kube-cluster-1",
+		Namespace:            "foo",
+		GroupVersionResource: gvr,
+		Resource:             resourceToCreate,
+	}
+	createHandler(nts, "kube-cluster-1", i)("kube.create", "_INBOX.aPXtkzW5ztAmDooWta7P1B.hXe5Q0m7", req)
+
+	// then
+	i.AssertExpectations(t)
+	n.AssertExpectations(t)
+	r.AssertExpectations(t)
+	nts.AssertExpectations(t)
+}
+
+func TestDeleteHandler(t *testing.T) {
+	// given
+	r := new(ResourceInterfaceMock)
+	r.On("Delete", "nginx-5bd8487f5f-5spdh", &metav1.DeleteOptions{}, *new([]string)).Return(nil)
+
+	n := new(NamespaceableResourceInterfaceMock)
+	n.On("Namespace", "foo").Return(r)
+	i := new(DynamicInterfaceMock)
+	gvr := schema.GroupVersionResource{
+		Group:    "",
+		Version:  "v1",
+		Resource: "pods",
+	}
+	i.On("Resource", gvr).Return(n)
+	nts := new(NatsMock)
+	nts.On("Publish", "_INBOX.aPXtkzW5ztAmDooWta7P1B.hXe5Q0m7", struct{}{}).Return(nil)
+
+	// when
+	req := DeleteReq{
+		Cluster:              "kube-cluster-1",
+		Namespace:            "foo",
+		GroupVersionResource: gvr,
+		Name:                 "nginx-5bd8487f5f-5spdh",
+		DeleteOptions:        &metav1.DeleteOptions{},
+	}
+	deleteHandler(nts, "kube-cluster-1", i)("kube.delete", "_INBOX.aPXtkzW5ztAmDooWta7P1B.hXe5Q0m7", req)
 
 	// then
 	i.AssertExpectations(t)
