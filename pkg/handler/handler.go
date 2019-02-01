@@ -8,14 +8,18 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-func List(n NatsPubSuber, cluster string, k dynamic.Interface) {
-	subscribe(n, "kube.list", func(subject, reply string, req ListReq) {
+func List(n natsPubSuber, cluster string, k dynamic.Interface) {
+	queueSubscribe(n, "kube.list", listHandler(n, cluster, k))
+}
+
+func listHandler(n natsPubSuber, cluster string, k dynamic.Interface) func(subject, reply string, req ListReq) {
+	return func(subject, reply string, req ListReq) {
 		if req.Cluster != cluster {
 			return
 		}
 		ul, err := k.Resource(req.GroupVersionResource).Namespace(req.Namespace).List(req.ListOptions)
 		publishReply(n, subject, reply, ul, err)
-	})
+	}
 }
 
 type ListReq struct {
@@ -25,14 +29,18 @@ type ListReq struct {
 	ListOptions          metav1.ListOptions          `json:"listOptions"`
 }
 
-func Get(n NatsPubSuber, cluster string, k dynamic.Interface) {
-	subscribe(n, "kube.get", func(subject, reply string, req GetReq) {
+func Get(n natsPubSuber, cluster string, k dynamic.Interface) {
+	queueSubscribe(n, "kube.get", getHandler(n, cluster, k))
+}
+
+func getHandler(n natsPubSuber, cluster string, k dynamic.Interface) func(subject, reply string, req GetReq) {
+	return func(subject, reply string, req GetReq) {
 		if req.Cluster != cluster {
 			return
 		}
 		u, err := k.Resource(req.GroupVersionResource).Namespace(req.Namespace).Get(req.Name, req.GetOptions, req.Subresources...)
 		publishReply(n, subject, reply, u, err)
-	})
+	}
 }
 
 type GetReq struct {
@@ -44,14 +52,18 @@ type GetReq struct {
 	Subresources         []string                    `json:"subresources"`
 }
 
-func Create(n NatsPubSuber, cluster string, k dynamic.Interface) {
-	subscribe(n, "kube.create", func(subject, reply string, req CreateReq) {
+func Create(n natsPubSuber, cluster string, k dynamic.Interface) {
+	queueSubscribe(n, "kube.create", createHandler(n, cluster, k))
+}
+
+func createHandler(n natsPubSuber, cluster string, k dynamic.Interface) func(subject, reply string, req CreateReq) {
+	return func(subject, reply string, req CreateReq) {
 		if req.Cluster != cluster {
 			return
 		}
 		u, err := k.Resource(req.GroupVersionResource).Namespace(req.Namespace).Create(req.Resource, req.CreateOptions, req.Subresources...)
 		publishReply(n, subject, reply, u, err)
-	})
+	}
 }
 
 type CreateReq struct {
@@ -63,14 +75,18 @@ type CreateReq struct {
 	Subresources         []string                    `json:"subresources"`
 }
 
-func Delete(n NatsPubSuber, cluster string, k dynamic.Interface) {
-	subscribe(n, "kube.delete", func(subject, reply string, req DeleteReq) {
+func Delete(n natsPubSuber, cluster string, k dynamic.Interface) {
+	queueSubscribe(n, "kube.delete", deleteHandler(n, cluster, k))
+}
+
+func deleteHandler(n natsPubSuber, cluster string, k dynamic.Interface) func(subject, reply string, req DeleteReq) {
+	return func(subject, reply string, req DeleteReq) {
 		if req.Cluster != cluster {
 			return
 		}
 		err := k.Resource(req.GroupVersionResource).Namespace(req.Namespace).Delete(req.Name, req.DeleteOptions, req.Subresources...)
 		publishReply(n, subject, reply, struct{}{}, err)
-	})
+	}
 }
 
 type DeleteReq struct {
@@ -88,7 +104,7 @@ type DeleteReq struct {
 // - see e.g. https://kubernetes.io/blog/2018/01/reporting-errors-using-kubernetes-events/ on how to raise
 // N.B. as an aside; events have a `involvedObject:` that identifies the resource the event relate to
 // - if you `kubectl describe` that resource you will see the specific events that relate to it
-func WatchEvents(n NatsPubSuber, cluster string, k dynamic.Interface) error {
+func WatchEvents(n natsPublisher, cluster string, k dynamic.Interface) error {
 	gvr := schema.GroupVersionResource{
 		Group:    "",
 		Version:  "v1",
