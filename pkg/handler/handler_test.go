@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"github.com/nats-io/go-nats"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -10,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/dynamic"
+	"sync"
 	"testing"
 )
 
@@ -205,6 +207,42 @@ func TestDeleteHandler(t *testing.T) {
 	nts.AssertExpectations(t)
 }
 
+func TestWatchEvents(t *testing.T) {
+	// given
+	kubeEventsChan := make(chan watch.Event)
+	var kubeEventEmitChan <-chan watch.Event = kubeEventsChan // convert to send events only (required by method sig)
+	w := new(WatchInterfaceMock)
+	w.On("ResultChan").Return(kubeEventEmitChan)
+	r := new(ResourceInterfaceMock)
+	r.On("Watch", metav1.ListOptions{}).Return(w)
+	n := new(NamespaceableResourceInterfaceMock)
+	n.ResourceInterfaceMock = *r
+	gvr := schema.GroupVersionResource{
+		Group:    "",
+		Version:  "v1",
+		Resource: "events",
+	}
+	i := new(DynamicInterfaceMock)
+	i.On("Resource", gvr).Return(n)
+
+	// WatchEvents() (and therefore Publish()) is run in a goroutine, so we need to use a mutex to signal when
+	// Publish() has actually been called
+	mutex := &sync.Mutex{}
+	mutex.Lock()
+	nts := &natsPubStub{mutex: mutex}
+
+	// when
+	go WatchEvents(nts, "kube-cluster-1", i)
+	ev := watch.Event{Type: watch.Added}
+	kubeEventsChan <- ev //send some events
+
+	// then
+	// wait until Publish() has been called, otherwise actualSubject and actualResp will not have been set
+	mutex.Lock()
+	assert.Equal(t, "kube.event.watch", nts.actualSubject)
+	assert.Equal(t, ev, nts.actualResp.(WatchEvent).Event)
+}
+
 type NatsMock struct {
 	mock.Mock
 }
@@ -279,10 +317,37 @@ func (r *ResourceInterfaceMock) List(opts metav1.ListOptions) (*unstructured.Uns
 
 func (r *ResourceInterfaceMock) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	args := r.Called(opts)
-	return args.Get(0).(watch.Interface), args.Error(1)
+	//return args.Get(0).(watch.Interface), args.Error(1)
+	return args.Get(0).(watch.Interface), nil
 }
 
 func (r *ResourceInterfaceMock) Patch(name string, pt types.PatchType, data []byte, options metav1.UpdateOptions, subresources ...string) (*unstructured.Unstructured, error) {
 	args := r.Called(name, pt, data, options, subresources)
 	return args.Get(0).(*unstructured.Unstructured), args.Error(1)
+}
+
+type WatchInterfaceMock struct {
+	mock.Mock
+}
+
+func (w *WatchInterfaceMock) Stop() {
+	w.Called()
+}
+
+func (w *WatchInterfaceMock) ResultChan() <-chan watch.Event {
+	args := w.Called()
+	return args.Get(0).(<-chan watch.Event)
+}
+
+type natsPubStub struct {
+	actualSubject string
+	actualResp    interface{}
+	mutex         *sync.Mutex
+}
+
+func (n *natsPubStub) Publish(subject string, v interface{}) error {
+	n.actualSubject = subject
+	n.actualResp = v
+	n.mutex.Unlock()
+	return nil
 }

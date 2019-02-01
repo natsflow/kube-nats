@@ -104,7 +104,7 @@ type DeleteReq struct {
 // - see e.g. https://kubernetes.io/blog/2018/01/reporting-errors-using-kubernetes-events/ on how to raise
 // N.B. as an aside; events have a `involvedObject:` that identifies the resource the event relate to
 // - if you `kubectl describe` that resource you will see the specific events that relate to it
-func WatchEvents(n natsPubSuber, cluster string, k dynamic.Interface) error {
+func WatchEvents(n natsPublisher, cluster string, k dynamic.Interface) error {
 	gvr := schema.GroupVersionResource{
 		Group:    "",
 		Version:  "v1",
