@@ -241,6 +241,10 @@ func TestWatchEvents(t *testing.T) {
 	mutex.Lock()
 	assert.Equal(t, "kube.event.watch", nts.actualSubject)
 	assert.Equal(t, ev, nts.actualResp.(WatchEvent).Event)
+	i.AssertExpectations(t)
+	n.AssertExpectations(t)
+	r.AssertExpectations(t)
+	w.AssertExpectations(t)
 }
 
 type NatsMock struct {
@@ -317,7 +321,6 @@ func (r *ResourceInterfaceMock) List(opts metav1.ListOptions) (*unstructured.Uns
 
 func (r *ResourceInterfaceMock) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	args := r.Called(opts)
-	//return args.Get(0).(watch.Interface), args.Error(1)
 	return args.Get(0).(watch.Interface), nil
 }
 

@@ -31,6 +31,18 @@ You need to run a separate kube-nats instance for each cluster you have. As such
 kubes-nats instance. This value is used in NATS messages to indicate from which cluster a message originated and also by 
 kube-nats to know which requests it should handle. The local skaffold profile will use "minikube" as the value.
 
+### Env Variables
+
+key            | default value           | description
+-------------- | ----------------------- | -----------
+CLUSTER        | "minikube"              | The name of the kube cluster in which kube-nats is deployed
+NATS_URL       | "nats://localhost:4222" | URL of the NATS server to connect to
+PUBLISH_EVENTS | "false"                 | Whether kube-nats should publish kube watch events to NATS.  
+
+If running multiple instances of kube-nats then you should set PUBLISH_EVENTS to "true" for at most one instance - this 
+is to prevent duplicate events being published to NATS for a single Kubernetes event. The request-reply behaviour of kube-nats
+uses [queue grouping](https://nats.io/documentation/concepts/nats-queueing/), hence natively handles running multiple instances.
+
 ## Nats Subjects
 
 kube-nats uses the Kubernetes Go client's [dynamic kubernetes api](https://github.com/kubernetes/client-go/blob/master/dynamic/interface.go).

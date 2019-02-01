@@ -7,6 +7,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
 	"os"
+	"strconv"
 )
 
 func main() {
@@ -27,11 +28,15 @@ func main() {
 		log.Fatal().Err(err).Msg("Could not create kubernetes client")
 	}
 
+	pubEvents, _ := strconv.ParseBool(os.Getenv("PUBLISH_EVENTS"))
+	if pubEvents {
+		go handler.WatchEvents(n, cluster, k)
+	}
+
 	go handler.Get(n, cluster, k)
 	go handler.List(n, cluster, k)
 	go handler.Create(n, cluster, k)
 	go handler.Delete(n, cluster, k)
-	go handler.WatchEvents(n, cluster, k)
 
 	select {}
 }
