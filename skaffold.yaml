@@ -9,3 +9,8 @@ deploy:
     # service account 'kube-nats' gives this pod access to all resources in the cluster (see deployment.yaml)
     - deployments/kube-nats-rbac.yaml
     - deployments/deployment.yaml
+profiles:
+  - name: travis-ci
+    build:
+      local:
+        push: false
